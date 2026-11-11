@@ -1,10 +1,13 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:stacked_services/src/dialog/platform_dialog.dart';
+import 'package:stacked_services/src/introspection/overlay_providers.dart';
 import 'package:stacked_services/src/models/overlay_request.dart';
 import 'package:stacked_services/src/models/overlay_response.dart';
+import 'package:stacked_shared/stacked_introspection.dart';
 
 typedef DialogBuilder = Widget Function(
   BuildContext context,
@@ -20,15 +23,27 @@ enum DialogPlatform {
 
 /// A DialogService that uses the Get package to show dialogs from the business logic
 class DialogService {
+  DialogService() {
+    if (!kReleaseMode)
+      LentActionProviders.register(DialogOverlayProvider(this));
+  }
+
+  final List<DialogRequest> _openRequests = [];
+
+  /// The dialogs shown through this service that are currently open, oldest first.
+  List<DialogRequest> get openRequests => List.unmodifiable(_openRequests);
+
   Map<dynamic, DialogBuilder>? _dialogBuilders;
 
   void registerCustomDialogBuilders(Map<dynamic, DialogBuilder> builders) {
     _dialogBuilders = {...?_dialogBuilders, ...builders};
   }
 
-  Map<dynamic, DialogBuilder> _customDialogBuilders = Map<dynamic, DialogBuilder>();
+  Map<dynamic, DialogBuilder> _customDialogBuilders =
+      Map<dynamic, DialogBuilder>();
 
-  @Deprecated('Prefer to use the StackedServices.navigatorKey instead of using this key. This will be removed in the next major version update for stacked.')
+  @Deprecated(
+      'Prefer to use the StackedServices.navigatorKey instead of using this key. This will be removed in the next major version update for stacked.')
   get navigatorKey {
     return Get.key;
   }
@@ -45,7 +60,9 @@ class DialogService {
   )
   void registerCustomDialogBuilder({
     required dynamic variant,
-    required Widget Function(BuildContext, DialogRequest, Function(DialogResponse)) builder,
+    required Widget Function(
+            BuildContext, DialogRequest, Function(DialogResponse))
+        builder,
   }) {
     _customDialogBuilders[variant] = builder;
   }
@@ -86,7 +103,9 @@ class DialogService {
         navigatorKey: navigatorKey,
       );
     } else {
-      var _dialogType = GetPlatform.isAndroid ? DialogPlatform.Material : DialogPlatform.Cupertino;
+      var _dialogType = GetPlatform.isAndroid
+          ? DialogPlatform.Material
+          : DialogPlatform.Cupertino;
       return _showDialog(
         title: title,
         description: description,
@@ -115,6 +134,13 @@ class DialogService {
     GlobalKey<NavigatorState>? navigatorKey,
   }) {
     var isConfirmationDialog = cancelTitle != null;
+    final request = DialogRequest(
+      title: title,
+      description: description,
+      mainButtonTitle: buttonTitle,
+      secondaryButtonTitle: cancelTitle,
+    );
+    _openRequests.add(request);
     return Get.dialog<DialogResponse>(
       PlatformDialog(
         key: Key('dialog_view'),
@@ -157,7 +183,7 @@ class DialogService {
       barrierDismissible: barrierDismissible,
       routeSettings: routeSettings,
       navigatorKey: navigatorKey,
-    );
+    ).whenComplete(() => _openRequests.remove(request));
   }
 
   /// Creates a popup with the given widget, a scale animation, and faded background.
@@ -192,7 +218,9 @@ class DialogService {
     RouteSettings? routeSettings,
     GlobalKey<NavigatorState>? navigatorKey,
     RouteTransitionsBuilder? transitionBuilder,
-    @Deprecated('Prefer to use `data` and pass in a generic type. customData doesn\'t work anymore') dynamic customData,
+    @Deprecated(
+        'Prefer to use `data` and pass in a generic type. customData doesn\'t work anymore')
+    dynamic customData,
     R? data,
   }) {
     assert(
@@ -207,6 +235,23 @@ class DialogService {
       'You have to call registerCustomDialogBuilder to use this function. Look at the custom dialog UI section in the stacked_services readme.',
     );
 
+    final request = DialogRequest<R>(
+      title: title,
+      description: description,
+      hasImage: hasImage,
+      imageUrl: imageUrl,
+      showIconInMainButton: showIconInMainButton,
+      mainButtonTitle: mainButtonTitle,
+      showIconInSecondaryButton: showIconInSecondaryButton,
+      secondaryButtonTitle: secondaryButtonTitle,
+      showIconInAdditionalButton: showIconInAdditionalButton,
+      additionalButtonTitle: additionalButtonTitle,
+      takesInput: takesInput,
+      data: data,
+      variant: variant,
+    );
+    _openRequests.add(request);
+
     return Get.generalDialog<DialogResponse<T>>(
       barrierColor: barrierColor,
       transitionDuration: const Duration(milliseconds: 200),
@@ -220,28 +265,14 @@ class DialogService {
           key: useSafeArea ? null : Key('dialog_view'),
           builder: (BuildContext context) => customDialogUI!(
             context,
-            DialogRequest<R>(
-              title: title,
-              description: description,
-              hasImage: hasImage,
-              imageUrl: imageUrl,
-              showIconInMainButton: showIconInMainButton,
-              mainButtonTitle: mainButtonTitle,
-              showIconInSecondaryButton: showIconInSecondaryButton,
-              secondaryButtonTitle: secondaryButtonTitle,
-              showIconInAdditionalButton: showIconInAdditionalButton,
-              additionalButtonTitle: additionalButtonTitle,
-              takesInput: takesInput,
-              data: data,
-              variant: variant,
-            ),
+            request,
             completeDialog,
           ),
         );
         if (!useSafeArea) return child;
         return SafeArea(key: Key('dialog_view'), child: child);
       },
-    );
+    ).whenComplete(() => _openRequests.remove(request));
   }
 
   /// Shows a confirmation dialog with title and description

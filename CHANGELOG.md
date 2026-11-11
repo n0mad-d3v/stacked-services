@@ -1,3 +1,10 @@
+## 1.7.0-beta.1 (2026-11-11)
+
+### Features
+
+* `DialogService`, `BottomSheetService` and `SnackbarService` lend actions to the focused screen while an overlay is open, so agents and journey tests can confirm, cancel or dismiss it. Release builds don't register them.
+* Adds `SnackbarService.lastSnackbar`, the title and message of the last snackbar shown.
+
 # [1.6.0](https://github.com/Stacked-Org/services/compare/v1.5.1...v1.6.0) (2024-11-07)
 
 

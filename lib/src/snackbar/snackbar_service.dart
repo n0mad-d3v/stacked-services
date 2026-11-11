@@ -1,15 +1,29 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:stacked_shared/stacked_introspection.dart';
 import 'package:stacked_shared/stacked_shared.dart' as sc;
 import 'package:stacked_services/src/exceptions/custom_snackbar_exception.dart';
+import 'package:stacked_services/src/introspection/overlay_providers.dart';
 import 'package:stacked_services/src/snackbar/snackbar_config.dart';
 
 import 'stacked_snackbar_customizations.dart';
 
 /// A service that allows the user to show the snackbar from a ViewModel
 class SnackbarService {
+  SnackbarService() {
+    if (!kReleaseMode) {
+      LentActionProviders.register(SnackbarOverlayProvider(this));
+    }
+  }
+
+  Map<String, String?>? _lastSnackbar;
+
+  /// The title and message of the last snackbar shown through this service.
+  Map<String, String?>? get lastSnackbar => _lastSnackbar;
+
   Map<dynamic, SnackbarConfig?> _customSnackbarConfigs =
       Map<dynamic, SnackbarConfig?>();
 
@@ -60,6 +74,7 @@ class SnackbarService {
     String? mainButtonTitle,
     void Function()? onMainButtonTapped,
   }) {
+    _lastSnackbar = {'title': title, 'message': message};
     final mainButtonWidget = _getMainButtonWidget(
       mainButtonTitle: mainButtonTitle,
       onMainButtonTapped: onMainButtonTapped,
@@ -144,6 +159,7 @@ class SnackbarService {
     Function? onTap,
     Duration? duration,
   }) async {
+    _lastSnackbar = {'title': title, 'message': message};
     final snackbarConfigSupplied = _customSnackbarConfigs[variant];
     final snackbarConfigBuilder = _customSnackbarConfigBuilders[variant];
 

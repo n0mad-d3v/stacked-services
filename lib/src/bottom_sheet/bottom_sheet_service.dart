@@ -2,10 +2,13 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:stacked_services/src/introspection/overlay_providers.dart';
 import 'package:stacked_services/src/models/overlay_request.dart';
 import 'package:stacked_services/src/models/overlay_response.dart';
+import 'package:stacked_shared/stacked_introspection.dart';
 
 import 'bottom_sheet_ui.dart';
 
@@ -17,6 +20,15 @@ typedef SheetBuilder = Widget Function(
 
 /// A service that allows you to show a bottom sheet
 class BottomSheetService {
+  BottomSheetService() {
+    if (!kReleaseMode) LentActionProviders.register(SheetOverlayProvider(this));
+  }
+
+  final List<SheetRequest> _openRequests = [];
+
+  /// The sheets shown through this service that are currently open, oldest first.
+  List<SheetRequest> get openRequests => List.unmodifiable(_openRequests);
+
   Map<dynamic, SheetBuilder>? _sheetBuilders;
 
   void setCustomSheetBuilders(Map<dynamic, SheetBuilder> builders) {
@@ -37,6 +49,13 @@ class BottomSheetService {
     bool useRootNavigator = false,
     double elevation = 1,
   }) {
+    final request = SheetRequest(
+      title: title,
+      description: description,
+      mainButtonTitle: confirmButtonTitle,
+      secondaryButtonTitle: cancelButtonTitle,
+    );
+    _openRequests.add(request);
     return Get.bottomSheet<SheetResponse?>(
       Material(
         type: MaterialType.transparency,
@@ -71,7 +90,7 @@ class BottomSheetService {
             description,
           ])}'),
       useRootNavigator: useRootNavigator,
-    );
+    ).whenComplete(() => _openRequests.remove(request));
   }
 
   /// Creates a popup with the given widget, a scale animation, and faded background.
@@ -126,28 +145,31 @@ class BottomSheetService {
 
     final sheetBuilder = _sheetBuilders![variant];
 
+    final request = SheetRequest<R>(
+      title: title,
+      description: description,
+      hasImage: hasImage,
+      imageUrl: imageUrl,
+      showIconInMainButton: showIconInMainButton,
+      mainButtonTitle: mainButtonTitle,
+      showIconInSecondaryButton: showIconInSecondaryButton,
+      secondaryButtonTitle: secondaryButtonTitle,
+      showIconInAdditionalButton: showIconInAdditionalButton,
+      additionalButtonTitle: additionalButtonTitle,
+      takesInput: takesInput,
+      // ignore: deprecated_member_use_from_same_package
+      customData: customData,
+      variant: variant,
+      data: data,
+    );
+    _openRequests.add(request);
+
     return Get.bottomSheet<SheetResponse<T>>(
       Material(
         type: MaterialType.transparency,
         child: sheetBuilder!(
           Get.context!,
-          SheetRequest<R>(
-            title: title,
-            description: description,
-            hasImage: hasImage,
-            imageUrl: imageUrl,
-            showIconInMainButton: showIconInMainButton,
-            mainButtonTitle: mainButtonTitle,
-            showIconInSecondaryButton: showIconInSecondaryButton,
-            secondaryButtonTitle: secondaryButtonTitle,
-            showIconInAdditionalButton: showIconInAdditionalButton,
-            additionalButtonTitle: additionalButtonTitle,
-            takesInput: takesInput,
-            // ignore: deprecated_member_use_from_same_package
-            customData: customData,
-            variant: variant,
-            data: data,
-          ),
+          request,
           completeSheet,
         ),
       ),
@@ -167,7 +189,7 @@ class BottomSheetService {
             secondaryButtonTitle,
           ])}'),
       useRootNavigator: useRootNavigator,
-    );
+    ).whenComplete(() => _openRequests.remove(request));
   }
 
   /// Check if bottomsheet is open
