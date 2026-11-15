@@ -1,7 +1,8 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
+import 'package:get/get.dart' as get_defaults show SnackPosition, SnackStyle;
 import 'package:stacked_shared/stacked_shared.dart' as sc;
 import 'package:stacked_services/src/exceptions/custom_snackbar_exception.dart';
 import 'package:stacked_services/src/snackbar/snackbar_config.dart';
@@ -66,9 +67,9 @@ class SnackbarService {
       config: _snackbarConfig,
     );
 
-    Get.snackbar(
-      title,
-      message,
+    // Built as a GetSnackBar rather than through Get.snackbar, whose mainButton must be the SDK
+    // Material TextButton. The defaults below are Get.snackbar's own (get 4.7.3).
+    Get.showSnackbar(GetSnackBar(
       titleText: title.isNotEmpty
           ? Text(
               title,
@@ -97,39 +98,39 @@ class SnackbarService {
               textAlign: _snackbarConfig?.messageTextAlign ?? TextAlign.left,
             )
           : SizedBox.shrink(),
-      shouldIconPulse: _snackbarConfig?.shouldIconPulse,
+      shouldIconPulse: _snackbarConfig?.shouldIconPulse ?? true,
       onTap: onTap,
-      barBlur: _snackbarConfig?.barBlur,
+      barBlur: _snackbarConfig?.barBlur ?? 7.0,
       isDismissible: _snackbarConfig?.isDismissible ?? true,
       duration: duration ?? _snackbarConfig?.duration,
-      snackPosition: _snackbarConfig?.snackPosition.toGet,
-      backgroundColor: _snackbarConfig?.backgroundColor ?? Colors.grey[800],
+      snackPosition: _snackbarConfig?.snackPosition.toGet ?? get_defaults.SnackPosition.TOP,
+      backgroundColor: _snackbarConfig?.backgroundColor ?? Colors.grey.shade800,
       margin: _snackbarConfig?.margin ??
           const EdgeInsets.symmetric(horizontal: 10, vertical: 25),
       mainButton: mainButtonWidget,
       icon: _snackbarConfig?.icon,
       maxWidth: _snackbarConfig?.maxWidth,
-      padding: _snackbarConfig?.padding,
-      borderRadius: _snackbarConfig?.borderRadius,
+      padding: _snackbarConfig?.padding ?? const EdgeInsets.all(16),
+      borderRadius: _snackbarConfig?.borderRadius ?? 15.0,
       borderColor: _snackbarConfig?.borderColor,
       borderWidth: _snackbarConfig?.borderWidth,
       leftBarIndicatorColor: _snackbarConfig?.leftBarIndicatorColor,
       boxShadows: _snackbarConfig?.boxShadows,
       backgroundGradient: _snackbarConfig?.backgroundGradient,
       dismissDirection: _snackbarConfig?.dismissDirection,
-      showProgressIndicator: _snackbarConfig?.showProgressIndicator,
+      showProgressIndicator: _snackbarConfig?.showProgressIndicator ?? false,
       progressIndicatorController: _snackbarConfig?.progressIndicatorController,
       progressIndicatorBackgroundColor:
           _snackbarConfig?.progressIndicatorBackgroundColor,
       progressIndicatorValueColor: _snackbarConfig?.progressIndicatorValueColor,
-      snackStyle: _snackbarConfig?.snackStyle.toGet,
-      forwardAnimationCurve: _snackbarConfig?.forwardAnimationCurve,
-      reverseAnimationCurve: _snackbarConfig?.reverseAnimationCurve,
-      animationDuration: _snackbarConfig?.animationDuration,
-      overlayBlur: _snackbarConfig?.overlayBlur,
-      overlayColor: _snackbarConfig?.overlayColor,
+      snackStyle: _snackbarConfig?.snackStyle.toGet ?? get_defaults.SnackStyle.FLOATING,
+      forwardAnimationCurve: _snackbarConfig?.forwardAnimationCurve ?? Curves.easeOutCirc,
+      reverseAnimationCurve: _snackbarConfig?.reverseAnimationCurve ?? Curves.easeOutCirc,
+      animationDuration: _snackbarConfig?.animationDuration ?? const Duration(seconds: 1),
+      overlayBlur: _snackbarConfig?.overlayBlur ?? 0.0,
+      overlayColor: _snackbarConfig?.overlayColor ?? Colors.transparent,
       userInputForm: _snackbarConfig?.userInputForm,
-    );
+    ));
   }
 
   Future? showCustomSnackBar({

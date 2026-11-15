@@ -1,6 +1,6 @@
 import 'dart:async';
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:get/get.dart';
 import 'package:stacked_services/src/dialog/platform_dialog.dart';
 import 'package:stacked_services/src/models/overlay_request.dart';

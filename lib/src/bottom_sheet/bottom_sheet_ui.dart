@@ -1,6 +1,6 @@
 /// This class contains all the bottom sheet UI's used in the bottom sheet
 
-import 'package:flutter/material.dart';
+import 'package:material_ui/material_ui.dart';
 import 'package:stacked_services/src/bottom_sheet/responsive_reducers.dart';
 
 class GeneralBottomSheet extends StatelessWidget {
